@@ -1,0 +1,14 @@
+.authorFlair {
+    font-size: smaller;
+    font-weight: bold;
+    display: inline-block;
+    position: relative;
+}
+.flair {
+    border: 1px solid var(--base2);
+    border-radius: 3pt;
+    padding: 2pt;
+}
+img.authorFlairEmoji {
+    margin: 2pt;
+}

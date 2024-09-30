@@ -1,0 +1,35 @@
+.inventorytable {
+    margin: auto;
+}
+
+.inventorytable,.inventorytable th,.inventorytable td {
+  border: 1px solid black;
+  border-collapse: collapse;
+}
+
+.inventorytable th,.inventorytable td {
+    padding: 5px;
+}
+
+.filter-checkbox {
+    display: none !important;
+}
+
+.selected {
+    border-radius: 10px;
+    border: 3px dotted white;
+}
+
+.unselected {
+    border-radius: 10px;
+    border: 3px dotted transparent;
+}
+
+.cart td, .cart th {
+    padding: 5px;
+}
+
+.css-1c1s55e-MuiFormControlLabel-root {
+    margin-left: 10px !important;
+    margin-right: 10px !important;;
+}

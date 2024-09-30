@@ -1,0 +1,53 @@
+const bossSpecials = {
+  W:'🦾',
+  P:'⚠️',
+  D:'💨'
+};
+
+const {
+  preview: {
+    images: {
+      [0]: {
+        source: {
+          url: image
+        }
+      }
+    }
+  },
+  name: bossID,
+  link_flair_text,
+  title: titleString
+} = msg.payload
+
+const healthRegex = /\d+([/.]\d+)?/g.exec(link_flair_text)
+
+const [rawHealth] = healthRegex ? healthRegex : [];
+const [currentHealth, maxHealth] = rawHealth.split('/');
+
+const healthObj = { currentHealth: +currentHealth, maxHealth: +maxHealth };
+
+const [bossClass, ...rawStars] = link_flair_text.split("★")
+const stars = rawStars.map(s => "★");
+const [specialsString = ''] = /\[(.*?)\]/.exec(titleString).filter(s => !s.includes('Health') && !s.includes('['));
+
+const [title] = titleString.split(' [')
+
+msg.payload = {
+  title,
+  bossID,
+  specials: specials.split(',').filter(s => Object.keys(bossSpecials).includes(s)).map(s => ({ letter: s, icon: bossSpecials[s] })),
+  stars,
+  bossClass,
+  health: healthObj,
+  created: rawBoss.created,
+  flair: { text: rawBoss.link_flair_text, color: rawBoss.link_flair_background_color },
+  thumbnail: rawBoss.thumbnail,
+  image: image || rawBoss.thumbnail,
+  pictures: rawBoss.preview.images,
+  maxGold: Math.floor((0.086 * healthObj.maxHealth ** 0.547 * (healthObj.maxHealth - healthObj.currentHealth) ** 0.263 + 10) * stars.length ** 0.167),
+  maxDmg: Math.ceil(0.08 * healthObj.maxHealth ** 0.15 * healthObj.currentHealth ** 0.5 * stars.length ** 1.7),
+  commentData: `https://api.spaghet.io/kotd/v1/boss-comments/${rawBoss.id}`,
+  permalink: `https://www.reddit.com/r/kickopenthedoor/comments/${rawBoss.id}`
+}
+
+return msg;
