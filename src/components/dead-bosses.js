@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from 'react'
 import { Fab, SvgIcon, Modal, Typography, Box, Grid,
-         CircularProgress, Accordion, AccordionSummary, AccordionDetails, Stack } from '@mui/material';
+         CircularProgress, Accordion, AccordionSummary, AccordionDetails, Stack, Badge } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { isMobile } from 'react-device-detect';
@@ -16,8 +16,11 @@ moment.relativeTimeThreshold('m', 60);
 const fetcher = (...args) => fetch(...args).then((res) => res.json());
 
 const DeadBosses = () => {
+
+  const [storedPlayerName] = useState(localStorage.getItem('storedPlayerName'));
   const [ deadBosses, updateBosses ] = useState([]);
   const [ showDeadBosses, openDeadBosses ] = useState(false);
+  const [ expanded, expandBoss ] = useState({})
   const [ page, setPage ] = useState(0);
   const [ hasMore, moreData ] = useState(true);
   const [ isLoading, loading ] = useState(false);
@@ -69,6 +72,10 @@ const DeadBosses = () => {
   const getDeadBosses = (refresh) => {
     loading(true);
     fetcher(`https://api.spaghet.io/kotd/v1/dead-bosses`, {method: 'POST', body: refresh ? 0 : page}).then((data) => {
+      expandBoss({
+        ...expanded,
+        ...data.reduce((bosses, boss) => ({...bosses, [boss.id]: false}), {})
+      })
       updateBosses([
         ...(refresh ? [] : deadBosses),
         ...data
@@ -139,55 +146,72 @@ const DeadBosses = () => {
 
               const rgb = hexToRgb(bgColor);
             return <Accordion 
-                      variant="outlined" 
-                      sx={{
-                        color: getFlairColor(player?.flairText), 
-                        width: '100%', 
-                        border: '2px solid #000', 
-                        backgroundRepeat: 'no-repeat', 
-                        backgroundPosition: 'center center',
-                        backgroundImage: `radial-gradient(circle at center, rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.6), rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 1)), url(/assets/${player.race.toLowerCase()}.png)` 
-                      }} 
-                      key={boss.id} 
-                    >
-                      <AccordionSummary 
+                        variant="outlined" 
                         sx={{
-                            position: 'relative', 
-                            display: 'flex', 
-                            flexWrap: 'wrap', 
-                            alignItems: 'center'
-                        }}
-                        expandIcon={<ExpandMoreIcon />} >
-                        <Box sx={{ flexGrow: 1 }}>
-                          <Grid container spacing={1} direction="row" sx={{ justifyContent: "space-between", alignItems: "center"}}>
-                            <Grid item sx={{fontSize: '2rem'}} xs={2}>
-                              {boss?.stars?.length}★
+                          color: getFlairColor(player?.flairText), 
+                          border: '2px solid #000', 
+                          backgroundRepeat: 'no-repeat', 
+                          backgroundPosition: 'center center',
+                          backgroundImage: `radial-gradient(circle at center, rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.6), rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 1)), url(/assets/races/${player.race.toLowerCase()}.png)`,
+                          '.MuiAccordionSummary-root': {
+                            width: '100%', 
+                          }
+                        }} 
+                        key={boss.id}
+                        onChange={() => expandBoss({...expanded, [boss.id]: !expanded[boss.id]})}
+                        expanded={expanded[boss.id]}
+                      >
+                        <AccordionSummary 
+                          sx={{
+                              position: 'relative', 
+                              display: 'flex', 
+                              flexWrap: 'wrap', 
+                              alignItems: 'center',
+                              "& .MuiAccordionSummary-expandIconWrapper": {
+                                transition: "none",
+                                "&.Mui-expanded": {
+                                  transform: "none",
+                                },
+                              },
+                              '& .MuiAccordionSummary-content': {
+                                width: '100%', 
+                              }
+                          }}
+                          expandIcon={<img height="35" src={expanded[boss.id] ? '/assets/misc/openChest.svg' : '/assets/misc/closedChest.svg'} alt="Closed Chest" />}
+                          >
+                          <Box sx={{ flexGrow: 1, width: '100%' }}>
+                            <Grid container spacing={1} direction="row" sx={{ justifyContent: "space-between", alignItems: "center"}}>
+                      
+                              <Grid item sx={{fontSize: '2rem'}} xs={2}>
+                                <Badge anchorOrigin={{ vertical: 'top', horizontal: 'left' }} badgeContent={killer === storedPlayerName ?  <img src={'/assets/misc/crown.svg'} alt={'KING'} style={{width: '30px', position: 'fixed'}} /> : ''}>
+                                  {boss?.stars?.length}★
+                                </Badge>
+                              </Grid>
+                              <Grid item xs={8} sx={textOverflow}>
+                                {boss.title}
+                              </Grid>
+                              <Grid item xs={2}>
+                                {bossHealth}hp
+                              </Grid>
+                              <Grid item xs={8} sx={textOverflow}>
+                                <Typography sx={{fontSize: '1.2rem', textAlign: 'left'}}>
+                                    u/{killer}
+                                </Typography>
+                              </Grid>
+                              <Grid item xs={4} sx={{textAlign: 'right'}}>
+                                <small><i><Moment fromNow>{killed}</Moment></i></small>
+                              </Grid>
                             </Grid>
-                            <Grid item xs={8} sx={textOverflow}>
-                              {boss.title}
-                            </Grid>
-                            <Grid item xs={2}>
-                              {bossHealth}hp
-                            </Grid>
-                            <Grid item xs={8} sx={textOverflow}>
-                              <Typography sx={{fontSize: '1.2rem', textAlign: 'left'}}>
-                                u/{killer}
-                              </Typography>
-                            </Grid>
-                            <Grid item xs={4} sx={{textAlign: 'right'}}>
-                              <small><i><Moment fromNow>{killed}</Moment></i></small>
-                            </Grid>
-                          </Grid>
-                        </Box>
-                      </AccordionSummary>
-                      <AccordionDetails>
-                        <Box sx={{ flexGrow: 1 }}>
-                          {command}
-                          <hr/>
-                          <Markdown>{rewards}</Markdown>
-                        </Box>
-                      </AccordionDetails>
-                  </Accordion>
+                          </Box>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                          <Box sx={{ flexGrow: 1 }}>
+                            {command}
+                            <hr/>
+                            <Markdown>{rewards}</Markdown>
+                          </Box>
+                        </AccordionDetails>
+                    </Accordion>
             })}
           </InfiniteScroll>
         </Box>

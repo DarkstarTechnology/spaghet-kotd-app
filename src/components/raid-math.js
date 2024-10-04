@@ -110,9 +110,9 @@ const RaidMath = () => {
   const calculateReact = function(tab) {
     let rawReact = Math.floor(((tab.baseDmg + (weaponDamages[tab.name]*elementStrengths[tab.name]))*(bloodLust ? 2 : 1))/5);
     if(rawReact <= 10) {
-      return (<div style={{textAlign: 'center'}}><img src={'/assets/' + rawReact + '.svg'} alt={rawReact} style={{maxHeight: 100, maxWidth: '50%'}}/></div>)
+      return (<div style={{textAlign: 'center'}}><img src={'/assets/reacts/' + rawReact + '.svg'} alt={rawReact} style={{maxHeight: 100, maxWidth: '50%'}}/></div>)
     } else if(rawReact > 10) {
-      return (<div style={{textAlign: 'center'}}><img src={'/assets/10.svg'} alt="10" style={{maxHeight: 100, maxWidth: '48%', display: 'inline-block'}}/> <img src={'/assets/' + rawReact.toString().split('')[1] + '.svg'} alt={rawReact} style={{maxHeight: 100, maxWidth: '48%', display: 'inline-block'}}/></div>)
+      return (<div style={{textAlign: 'center'}}><img src={'/assets/reacts/10.svg'} alt="10" style={{maxHeight: 100, maxWidth: '48%', display: 'inline-block'}}/> <img src={'/assets/reacts/' + rawReact.toString().split('')[1] + '.svg'} alt={rawReact} style={{maxHeight: 100, maxWidth: '48%', display: 'inline-block'}}/></div>)
     }
   }
 
@@ -271,12 +271,12 @@ const RaidMath = () => {
                       renderValue={(selected) => (
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                           {selected.map((element) => (
-                            <Chip key={`${tab.name}-${element}-chip`} label={<img src={`/assets/${element}.png`} alt={element} style={{backgroundSize: 20, height: 20, width: 20}} />} />
+                            <Chip key={`${tab.name}-${element}-chip`} label={<img src={`/assets/elements/${element}.png`} alt={element} style={{backgroundSize: 20, height: 20, width: 20}} />} />
                           ))}
                         </Box>
                       )}
                     >
-                      {Object.keys(tab.items).filter(ele => ele !== 'Uknw').sort((a, b) => (a > b ? 1 : a < b ? -1 : 0)).map(element => <MenuItem key={tab.name + element} value={element}><img src={`/assets/${element}.png`} alt={element} style={{backgroundSize: 20, height: 20, width: 20}} /></MenuItem>)}
+                      {Object.keys(tab.items).filter(ele => ele !== 'Uknw').sort((a, b) => (a > b ? 1 : a < b ? -1 : 0)).map(element => <MenuItem key={tab.name + element} value={element}><img src={`/assets/elements/${element}.png`} alt={element} style={{backgroundSize: 20, height: 20, width: 20}} /></MenuItem>)}
                     </Select>
                   </FormControl> : ''}
                   {itemsInventory.length ? 
@@ -292,7 +292,7 @@ const RaidMath = () => {
                   > 
                       {weaponElements[tab.name]?.length ? Object.keys(tab.items).filter(ele => weaponElements[tab.name].includes(ele) || ele === 'Uknw').sort((a, b) => (a > b ? 1 : a < b ? -1 : 0)).map(element => 
                       [
-                        <ListSubheader sx={{textAlign: 'center', fontSize: '2rem'}}>{element === 'Uknw' ? '🎆' : <img src={`/assets/${element}.png`} alt={element} style={{backgroundSize: 40, height: 40, width: 40}} />}</ListSubheader>,
+                        <ListSubheader sx={{textAlign: 'center', fontSize: '2rem'}}>{element === 'Uknw' ? '🎆' : <img src={`/assets/elements/${element}.png`} alt={element} style={{backgroundSize: 40, height: 40, width: 40}} />}</ListSubheader>,
                         tab.items[element].map((item, i) => <MenuItem key={`${item.id.displayValue}-${i}`} value={item}>ID{item.id.displayValue} | {item.name.displayValue} | {item.damage.displayValue}D | {+item.durability.sortValue}</MenuItem>)
                       ]) : ''} 
                     </Select>

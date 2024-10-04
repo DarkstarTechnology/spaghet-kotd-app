@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Snackbar } from "@mui/material";
 import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
-import Button from '@mui/material/Button';
+import IconButton from '@mui/material/Button';
 
 const CopyToClipboardButton = ({text, title, variant}) => {
   const [open, setOpen] = useState(false);
@@ -13,9 +13,9 @@ const CopyToClipboardButton = ({text, title, variant}) => {
 
   return (
     <>
-      <Button onClick={handleClick} color="secondary" title={title || `Copy "${text}"`} variant={variant || 'text'}>
+      <IconButton onClick={handleClick} color="secondary" title={title || `Copy "${text}"`} variant={variant || 'text'}>
         <ContentCopyRoundedIcon />
-      </Button>
+      </IconButton>
       <Snackbar
         message={'Copied "' + text + '" to clipboard'}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}

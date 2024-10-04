@@ -9,5 +9,18 @@ import { CopyToClipboardButton } from './copy-to-clipboard';
 import { TotalMaxDmg } from './total-max-dmg';
 import { Announcements } from './announcements';
 import { DeadBosses } from './dead-bosses';
+import { ThousandDoors } from './1000-doors'
 
-export { BossList, PlayerDetails, PlayerInventory, InventoryFormmater, KOTDShop, RaidMath, BossDetails, CopyToClipboardButton, TotalMaxDmg, Announcements, DeadBosses };
+export { BossList, 
+         PlayerDetails, 
+         PlayerInventory, 
+         InventoryFormmater, 
+         KOTDShop, 
+         RaidMath, 
+         BossDetails, 
+         CopyToClipboardButton, 
+         TotalMaxDmg, 
+         Announcements, 
+         DeadBosses,
+         ThousandDoors
+};

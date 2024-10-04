@@ -9,15 +9,16 @@ import moment from 'moment';
 import Flippy, { FrontSide, BackSide } from 'react-flippy';
 import { isMobile } from 'react-device-detect';
 import useSound from 'use-sound';
+import InfiniteScroll from 'react-infinite-scroll-component';
 
 import { styled, Card, CardHeader, CardMedia, CardContent, CardActions, Collapse, 
         IconButton, Typography, TextField, 
         Button, ButtonGroup, Stack, Divider, Link, LinearProgress, 
         linearProgressClasses, Box, Alert, AlertTitle, Pagination, 
-        Snackbar, Skeleton, Badge, CircularProgress, Grid, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
+        Snackbar, Skeleton, Badge, CircularProgress, Grid, 
+        Accordion, AccordionSummary, AccordionDetails, AccordionActions } from '@mui/material';
 
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import RedditIcon from '@mui/icons-material/Reddit';
 import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -91,6 +92,7 @@ const BossDetails = (props) => {
   const [maxGold, setMaxGold] = useState(boss?.maxGold ?? 0);
   const [maxDmg, setMaxDmg] = useState(boss?.maxDmg ?? 0);
   const [includeMaxDmg, setIncMaxDmg] = useState(true);
+  const [bossComments, setBossComments] = useState(boss?.comments?.at(0) ?? []);
   const [allBossComments, setAllBossComments] = useState(boss?.comments ?? []);
   const [allBossCommentsBackup, backupBossComments] = useState([]);
   const [incomingPlayerComment] = useSound(PlayerCommentSound);
@@ -110,7 +112,7 @@ const BossDetails = (props) => {
   const { sendMessage: playerHealthOut } = useBroadcastChannel('player-health');
   
   useEffect(() => {
-    if(newBossComment && newBossComment.bossID.includes(boss.id)) {
+    if(newBossComment?.bossID?.includes(boss?.id)) {
 
       const {
         bossHealth,
@@ -122,34 +124,16 @@ const BossDetails = (props) => {
 
       const isMine = playerBossDetails.id && parentID.includes(playerBossDetails.id) && newBossComment.body.includes('💥') && playerBossDetails.validAttack;
 
-      const pageIndex = allBossComments.findIndex(page => page.filter(comment => parentID.includes(comment.id)).length);
+      const parentComment = bossComments.find(comment => parentID.includes(comment.id));
 
-      if(allBossComments.length && pageIndex >= 0) {
-        const {
-          [0]: {
-            index: commentIndex
-          }
-        } = allBossComments[pageIndex].map((comment, index) => ({id: comment.id, index})).filter(comment => parentID.includes(comment.id));
-
-        const seletedComment = allBossComments[pageIndex][commentIndex];
+      if(bossComments.length) {
         
-        setAllBossComments([
-          ...allBossComments.slice(0, pageIndex),
-          [
-            ...allBossComments[pageIndex].slice(0, commentIndex),
-            {
-              ...seletedComment,
-              replies: [
-                ...seletedComment.replies,
-                {
-                  ...newBossComment,
-                  show: false,
-                },
-              ]
-            },
-            ...allBossComments[pageIndex].slice(commentIndex + 1),
-          ],
-          ...allBossComments.slice(pageIndex + 1)
+        setBossComments([
+          ...bossComments.filter(comment => !parentID.includes(comment.id)),
+          {
+            ...parentComment,
+            replies: [newBossComment]
+          }
         ]);
       }
 
@@ -228,7 +212,7 @@ const BossDetails = (props) => {
   }, [newBossComment]);
 
   useEffect(() => {
-    if(newPlayerComment && newPlayerComment.bossID.includes(boss.id)) {
+    if(newPlayerComment?.bossID?.includes(boss?.id)) {
       //console.log('newComment from Player Comment Event', newPlayerComment);
       if(expanded) {
         incomingPlayerComment();
@@ -252,6 +236,7 @@ const BossDetails = (props) => {
         }
 
         if(validAttack) {
+          setShowResult(false)
           backupPlayerBossDetails(playerBossDetails);
           setPlayerBossDetails({
             ...playerBossDetails,
@@ -266,27 +251,17 @@ const BossDetails = (props) => {
         }
       }
 
-      if(allBossComments?.length && allBossComments[0].length < 20) {
-        setAllBossComments([
-          [
-            newPlayerComment,
-            ...allBossComments[0]
-          ],
-          ...allBossComments.slice(1)
-        ]);
-      } else if(!allBossComments.length || allBossComments[0]?.length === 20) {
-        const newPage = [newPlayerComment];
-        setAllBossComments([
-          newPage,
-          ...allBossComments
-        ]);
-      }
+      
+      setBossComments([
+        ...bossComments,
+          newPlayerComment
+      ]);
       setCommentPage(0);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newPlayerComment]);
 
-  const refreshBossComments = (boss) => {
+  const refreshBossComments = () => {
     onlyShowMe(false);
     if(expanded) {
       setLoadingComments(true);
@@ -295,6 +270,9 @@ const BossDetails = (props) => {
         setLoadingComments(false);
         setAllBossComments(comments);
         setCommentPage(0);
+        setBossComments([
+          ...comments[0]
+        ]);
       });
     }
   }
@@ -325,46 +303,16 @@ const BossDetails = (props) => {
   
   const closeAllComments = () => {
     setAllBossComments([]);
+    setBossComments([]);
   }
 
-  const closeSingleComment = (closeComment) => {
-    setAllBossComments([
-      ...allBossComments.slice(0, currentCommentPage),
-      [
-        ...allBossComments[currentCommentPage].filter(comment => comment.id !== closeComment.id)
-      ],
-      ...allBossComments.slice(currentCommentPage + 1)
-    ].filter(page => page.length));
-  } 
-
-  const showReply = (seletedComment, selectedReply, indexes) => {
-    const [commentIndex, replyIndex] = indexes;
-    
-    setAllBossComments([
-      ...allBossComments.slice(0, currentCommentPage),
-      [
-        ...allBossComments[currentCommentPage].slice(0, commentIndex),
-        {
-          ...seletedComment,
-          replies: [
-            ...seletedComment.replies.slice(0, replyIndex),
-            {
-              ...selectedReply,
-              show: !selectedReply.show,
-            },
-            ...seletedComment.replies.slice(replyIndex + 1)
-          ]
-        },
-        ...allBossComments[currentCommentPage].slice(commentIndex + 1),
-      ],
-      ...allBossComments.slice(currentCommentPage + 1)
+  const handleCommentsPageChange = () => {
+    const page = currentCommentPage + 1;
+    setBossComments([
+      ...bossComments,
+      ...allBossComments[page]
     ]);
-  }
-
-  const handleCommentsPageChange = (e, page) => {
-    setCommentPage(page - 1);
-    const commentSection = document.getElementById(`${boss.id}-backside`);
-    commentSection.scrollTo({top: 0, behavior: 'smooth'});
+    setCommentPage(page);
   }  
   
   const hexToRgb = (hex) =>  {
@@ -377,12 +325,12 @@ const BossDetails = (props) => {
   }
 
   const getFlairRGB = (hex) => {
-    const {r,g,b} = hexToRgb(hex);
+    const {r,g,b} = hexToRgb(hex) ?? {r: '#FFF', b: '#FFF', g: '#FFF'};
     return [r, g, b].join(',');
   }
 
   const getRaceImage = (flairText) => {
-    const [race, levels] = flairText?.trim()?.split(' ') ?? ['', ''];
+    const [ race ] = flairText?.trim()?.split(' ') ?? ['', ''];
     return race.toLowerCase();
   }
 
@@ -424,25 +372,18 @@ const BossDetails = (props) => {
   const getMyComments = () => {
     onlyShowMe(!showMe);
     if(!showMe) {
-      backupBossComments(allBossComments);
-      setAllBossComments(
-        _.chain(allBossComments)
-        .flatten()
+      backupBossComments(bossComments);
+      setBossComments(
+        _.chain([
+          ...allBossComments.flat(),
+          ...bossComments
+        ])
         .filter(comment => comment.author === storedPlayerName)
-        .chunk(10)
+        .uniqBy('id')
         .value()
       ) 
     } else {
-      setAllBossComments(
-        _.chain(allBossCommentsBackup)
-        .flatten()
-        .concat(allBossComments.flat())
-        .uniqBy('id')
-        .sortBy('created')
-        .reverse()
-        .chunk(10)
-        .value()
-      );
+      refreshBossComments();
     }
   }
 
@@ -505,7 +446,7 @@ const BossDetails = (props) => {
               component="img"
               height="200"
               width="100%"
-              image={boss?.image ?? '/assets/backup.png'}
+              image={boss?.image ?? '/assets/misc/backup.png'}
               alt={boss?.title}
             />
             <CardContent sx={{position: 'relative'}}>
@@ -584,7 +525,7 @@ const BossDetails = (props) => {
                             playerBossDetails.elementResult && !playerBossDetails.waitingForBot ? 
                             <>
                               <Divider orientation="vertical" flexItem color="secondary" />
-                              <img src={`/assets/${playerBossDetails.element}.png`} alt={playerBossDetails.element} style={{backgroundSize: 24, height: 24, width: 24, marginLeft: 10}}/>
+                              <img src={`/assets/elements/${playerBossDetails.element}.png`} alt={playerBossDetails.element} style={{backgroundSize: 24, height: 24, width: 24, marginLeft: 10}}/>
                               <span className="commentResult">{playerBossDetails.elementResult}</span>
                             </> : playerBossDetails.waitingForBot ? <><Divider orientation="vertical" flexItem color="secondary" /><Box sx={{marginLeft: '10px'}}><CircularProgress size="2rem" /></Box></> : ''
                           )
@@ -622,12 +563,12 @@ const BossDetails = (props) => {
                       }
                     </ButtonGroup> 
                   </> : <CircularProgress size="5rem" />}
-              </> : 'Enter a username'}
+              </> : <>Enter a username<br />to see more</>}
             </CardContent>
           </FrontSide>
           <BackSide style={{ overflow: expanded ? 'auto': 'hidden', padding: 0}} id={`${boss.id}-backside`} >
             <CardContent sx={{position: 'relative'}}>
-              <ButtonGroup fullWidth={true} size={'small'}>
+              <ButtonGroup fullWidth={true} size={'small'}  sx={{position: 'sticky', top: -1, zIndex:1000, backgroundColor: '#fff', padding: '5px 0 5px 0'}}>
                 <IconButton
                   onClick={() => refreshBossComments(boss)}
                   size={"small"}
@@ -641,11 +582,19 @@ const BossDetails = (props) => {
                   Show {!showMe ? 'Me' : 'All'}
                 </Button>
               </ButtonGroup>
-              <Box style={{position: 'sticky', top: -1, zIndex:1000, backgroundColor: '#fff'}}>
-                {!showMe && allBossComments.length > 1 ? <Stack alignItems="center"><Pagination sx={{margin: '5px 0'}} count={allBossComments.length} variant="outlined" shape="rounded" size={isMobile ? 'large' : 'small'} siblingCount={isMobile ? 0 : 1} boundaryCount={isMobile ? 1 : 0} onChange={handleCommentsPageChange} /></Stack> : ''}
-              </Box>
-              {expanded && allBossComments.length ? <>
-                      {allBossComments[currentCommentPage].map((alert, aIndex) => (
+              {expanded && allBossComments.length ? 
+                    <InfiniteScroll
+                      dataLength={bossComments.length}
+                      next={handleCommentsPageChange}
+                      hasMore={!showMe && currentCommentPage < allBossComments.length - 1}
+                      scrollableTarget={`${boss.id}-backside`}
+                      endMessage={
+                        <p style={{ textAlign: 'center', color: '#FFF' }}>
+                          <b>Yay! You have seen it all</b>
+                        </p>
+                      }
+                    >
+                      {bossComments.map((alert, aIndex) => (
                         <div key={alert.id} style={{marginTop: !aIndex ? '10px' : 0}} >
                           <Accordion 
                               variant="outlined" 
@@ -654,7 +603,7 @@ const BossDetails = (props) => {
                                 width: '100%', 
                                 backgroundRepeat: 'no-repeat', 
                                 backgroundPosition: 'center center',
-                                backgroundImage: `radial-gradient(circle at center, rgba(${getFlairRGB(alert.bgColor)}, 0.6), rgba(${getFlairRGB(alert.bgColor)}, 1)), url(/assets/${getRaceImage(alert.flairText)}.png)`
+                                backgroundImage: `radial-gradient(circle at center, rgba(${getFlairRGB(alert.bgColor)}, 0.6), rgba(${getFlairRGB(alert.bgColor)}, 1)), url(/assets/races/${getRaceImage(alert.flairText)}.png)`
                               }} 
                               disableGutters={true}
                               disabled={!alert?.replies?.at(0)?.body}
@@ -671,13 +620,17 @@ const BossDetails = (props) => {
                                     marginBottom: 0
                                   }
                                 }}
-                                onClick={(e) => showReply(alert, alert?.replies?.at(0), [aIndex, 0])}
                                 expandIcon={alert?.replies?.at(0)?.body ? <ExpandMoreIcon  /> : ''}
                               >
                                 <Grid container spacing={0}>
                                   <Grid item xs={12}>
                                     <Typography sx={{textAlign: 'left', fontWeight: 'bold'}}>
                                       u/{alert.author} 
+                                    </Typography>
+                                  </Grid>
+                                  <Grid item xs={12}>
+                                    <Typography sx={{textAlign: 'left', fontSize: '.7rem'}}>
+                                      {alert?.flairText?.split(' ')?.at(1) ?? ''} 
                                     </Typography>
                                   </Grid>
                                   <Grid item xs={12} sx={{textAlign: 'left', fontSize: '.7rem'}}>
@@ -691,11 +644,27 @@ const BossDetails = (props) => {
                               <AccordionDetails sx={{fontSize: '.8rem'}}>
                                 <Markdown>{alert?.replies?.at(0)?.body}</Markdown>
                               </AccordionDetails>
+                              <AccordionActions>
+                                <ButtonGroup size='small'>
+                                  {alert.author === storedPlayerName ? 
+                                    <CopyToClipboardButton 
+                                    text={alert.body} 
+                                    title={alert.body? `Copy command "${alert.body}"`: 'Open boss to ATTACK!'} 
+                                    variant="text"/> : ''}
+                                  <IconButton 
+                                    color="secondary" 
+                                    title={`Open comment.`}
+                                    href={`https://www.reddit.com/r/kickopenthedoor/comments/${boss.id}/comment/${alert.id}/`}
+                                    target="_blank">
+                                    <OpenInNewTwoToneIcon size="small" color='primary' />
+                                  </IconButton>
+                                </ButtonGroup>
+                              </AccordionActions>
                           </Accordion>
                           <hr />
                         </div>
                       ))}
-                  </>: !loadingComments ? <Typography color={'#ccc'} variant="h5">Load comments</Typography> : <><Skeleton style={{margin: '5px 0'}} animation="wave" variant="rounded" width="100%" height={isMobile ? 40 : 30}></Skeleton><Stack spacing={1} divider={<Divider flexItem />}>
+                  </InfiniteScroll>: !loadingComments ? <Typography color={'#ccc'} variant="h5">Load comments</Typography> : <><Skeleton style={{margin: '5px 0'}} animation="wave" variant="rounded" width="100%" height={isMobile ? 40 : 30}></Skeleton><Stack spacing={1} divider={<Divider flexItem />}>
                     {[0,1,2,3,4,5,6,7,8,9].map(skelly => <Skeleton key={skelly} animation="wave" variant="rounded" width="100%" height={160}></Skeleton>)}
                   </Stack></>}
             </CardContent>

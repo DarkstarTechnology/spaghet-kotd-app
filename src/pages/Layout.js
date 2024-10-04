@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { Outlet, Link } from "react-router-dom";
 import { useState } from 'react';
 import PropTypes from 'prop-types';
@@ -14,16 +13,12 @@ import CalculateIcon from '@mui/icons-material/Calculate';
 
 import { Link as ReactRouterLink } from 'react-router-dom';
 import { BrowserView, isMobile } from 'react-device-detect';
-import { setInterval  } from "worker-timers";
 
 import "../App.css";
 import { PlayerDetails, Announcements } from "../components";
 
 function HideOnScroll(props) {
   const { children, window } = props;
-  // Note that you normally won't need to set the window ref as useScrollTrigger
-  // will default to window.
-  // This is only being set here because the demo is in an iframe.
   const trigger = useScrollTrigger({
     target: window ? window() : undefined,
   });
@@ -36,24 +31,18 @@ function HideOnScroll(props) {
 }
 
 HideOnScroll.propTypes = {
-  children: PropTypes.element.isRequired,
-  /**
-   * Injected by the documentation to work in an iframe.
-   * You won't need it on your project.
-   */
-  window: PropTypes.func,
+  children: PropTypes.element.isRequired
 };
 
 
 const Layout = (props) => {
-  // eslint-disable-next-line no-unused-vars
 
   const drawerWidth = 240;
   const pages = [
-    {title: 'Boss List', to: '/boss-list', icon: <ViewModuleIcon style={{verticalAlign:'middle'}} />}, 
-    {title: 'Inventory', to: '/inventory', icon: <BackpackIcon style={{verticalAlign:'middle'}}  />}, 
-    {title: 'Shop', to: '/shop', icon: <ShoppingCartIcon style={{verticalAlign:'middle'}}  />}, 
-    {title: 'Raid Math', to: '/raid', icon: <CalculateIcon style={{verticalAlign:'middle'}}  />}
+    {title: 'Boss List', to: '/boss-list', icon: <ViewModuleIcon style={{verticalAlign:'middle'}} />, loginRequired: false}, 
+    {title: 'Inventory', to: '/inventory', icon: <BackpackIcon style={{verticalAlign:'middle'}}  />, loginRequired: true}, 
+    {title: 'Shop', to: '/shop', icon: <ShoppingCartIcon style={{verticalAlign:'middle'}}  />, loginRequired: false}, 
+    {title: 'Raid Math', to: '/raid', icon: <CalculateIcon style={{verticalAlign:'middle'}}  />, loginRequired: true}
   ];
     
   const { window } = props;
@@ -109,7 +98,7 @@ const Layout = (props) => {
               Spaghet KOTD v{process.env.REACT_APP_VERSION}
             </Typography>
             <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-              {pages.map((page) => (
+              {pages.filter(page => page.loginRequired ? !!storedPlayerName : true).map((page) => (
                 <Link component={ReactRouterLink} key={page.title} style={{color: '#FFF', margin: '10px', verticalAlign:'middle'}}  to={page.to}>
                   {page.icon} {page.title}
                 </Link>
@@ -134,7 +123,7 @@ const Layout = (props) => {
           onOpen={handleDrawerToggle}
           onClose={handleDrawerToggle}
           ModalProps={{
-            keepMounted: true, // Better open performance on mobile.
+            keepMounted: true,
           }}
           sx={{
             display: { xs: 'block', sm: 'none' },
@@ -153,13 +142,6 @@ const Layout = (props) => {
       </div>
     </>
   )
-};
-Layout.propTypes = {
-  /**
-   * Injected by the documentation to work in an iframe.
-   * You won't need it on your project.
-   */
-  window: PropTypes.func,
 };
 
 export default Layout;

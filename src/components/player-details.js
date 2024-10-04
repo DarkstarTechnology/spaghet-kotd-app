@@ -147,7 +147,7 @@ const PlayerDetails = () => {
     return (
       <div style={{color: '#000', position: 'relative'}}>
         <img className="authorFlairEmoji" alt={storedPlayerData.flair.rank} src={storedPlayerData.flair.icon} style={{maxHeight: 45}} /> 
-        <div className="flair authorFlair" style={{position: 'relative', zIndex: 0, backgroundRepeat: 'no-repeat', backgroundPosition: 'center right', backgroundImage: `linear-gradient(to left, rgba(255,255,255, 0.4), rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 1)), url(/assets/${storedPlayerData.race.toLowerCase()}.png)` }}>
+        <div className="flair authorFlair" style={{position: 'relative', zIndex: 0, backgroundRepeat: 'no-repeat', backgroundPosition: 'center right', backgroundImage: `linear-gradient(to left, rgba(255,255,255, 0.4), rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 1)), url(/assets/races/${storedPlayerData.race.toLowerCase()}.png)` }}>
           <IconButton  sx={{ position: 'absolute', top: 0, right: 0, zIndex: 2}} size="small" onClick={clearPlayer}><ClearIcon size="small" /></IconButton>
           {storedPlayerName}<br/>
           <span style={{display: 'flex', flexWrap: 'wrap', alignItems: 'center', fontSize: 'small'}}>⚔️{melee} 🏹{ranged} 🔮{magic}&nbsp;<FavoriteIcon fontSize='smaller' />{constitution}</span>
