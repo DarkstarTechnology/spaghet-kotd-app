@@ -94,7 +94,6 @@ const BossDetails = (props) => {
   const [includeMaxDmg, setIncMaxDmg] = useState(true);
   const [bossComments, setBossComments] = useState(boss?.comments?.at(0) ?? []);
   const [allBossComments, setAllBossComments] = useState(boss?.comments ?? []);
-  const [allBossCommentsBackup, backupBossComments] = useState([]);
   const [incomingPlayerComment] = useSound(PlayerCommentSound);
   const [expanded, setExpanded] = useState(false);
   const [showResult, setShowResult] = useState(false);
@@ -124,16 +123,18 @@ const BossDetails = (props) => {
 
       const isMine = playerBossDetails.id && parentID.includes(playerBossDetails.id) && newBossComment.body.includes('💥') && playerBossDetails.validAttack;
 
-      const parentComment = bossComments.find(comment => parentID.includes(comment.id));
-
       if(bossComments.length) {
+        const commentIndex = bossComments.findIndex(comment => parentID.includes(comment.id));
+
+        const seletedComment = bossComments[commentIndex];
         
         setBossComments([
-          ...bossComments.filter(comment => !parentID.includes(comment.id)),
+          ...bossComments.slice(0, commentIndex),
           {
-            ...parentComment,
+            ...seletedComment,
             replies: [newBossComment]
-          }
+          },
+          ...bossComments.slice(commentIndex + 1),
         ]);
       }
 
@@ -251,10 +252,9 @@ const BossDetails = (props) => {
         }
       }
 
-      
       setBossComments([
-        ...bossComments,
-          newPlayerComment
+        newPlayerComment,
+        ...bossComments
       ]);
       setCommentPage(0);
     }
@@ -286,7 +286,9 @@ const BossDetails = (props) => {
 
   const handleCommandClick = (event, link, text) => {
     event.preventDefault();
-    navigator.clipboard.writeText(text);
+    if(text) {
+      navigator.clipboard.writeText(text);
+    }
     window.open(link, '_blank', 'noopener,noreferrer');
   };
 
@@ -372,18 +374,14 @@ const BossDetails = (props) => {
   const getMyComments = () => {
     onlyShowMe(!showMe);
     if(!showMe) {
-      backupBossComments(bossComments);
       setBossComments(
-        _.chain([
-          ...allBossComments.flat(),
-          ...bossComments
-        ])
+        _.chain(allBossComments)
+        .flatten()
         .filter(comment => comment.author === storedPlayerName)
-        .uniqBy('id')
         .value()
       ) 
     } else {
-      refreshBossComments();
+      refreshBossComments()
     }
   }
 
@@ -582,6 +580,9 @@ const BossDetails = (props) => {
                   Show {!showMe ? 'Me' : 'All'}
                 </Button>
               </ButtonGroup>
+              {/* <Box style={{position: 'sticky', top: -1, zIndex:1000, backgroundColor: '#fff'}}>
+                {!showMe && allBossComments.length > 1 ? <Stack alignItems="center"><Pagination sx={{margin: '5px 0'}} count={allBossComments.length} variant="outlined" shape="rounded" size={isMobile ? 'large' : 'small'} siblingCount={isMobile ? 0 : 1} boundaryCount={isMobile ? 1 : 0} onChange={handleCommentsPageChange} /></Stack> : ''}
+              </Box> */}
               {expanded && allBossComments.length ? 
                     <InfiniteScroll
                       dataLength={bossComments.length}

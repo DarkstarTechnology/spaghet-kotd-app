@@ -3,67 +3,56 @@ import { BossDetails } from "./"
 import { Container, Skeleton } from '@mui/material';
 import useSWR from 'swr';
 import RedditIcon from '@mui/icons-material/Reddit';
+import useWebSocket from 'react-use-websocket';
 
 import Grid from '@mui/material/Unstable_Grid2';
 
 const fetcher = (...args) => fetch(...args).then((res) => res.json());
 
-const initialBCWS = new WebSocket('wss://api.spaghet.io/ws/kotd/boss-comments');
-const initialBPWS = new WebSocket('wss://api.spaghet.io/ws/kotd/boss-posts');
-
 const BossList = ({ bossData }) => {
-
+  const wsOptions = {
+    reconnectInterval: 3000,
+    heartbeat: {
+      message: 'ping',
+      returnMessage: 'pong',
+      timeout: 60000,
+      interval: 25000,
+    },
+    retryOnError: true,
+    shouldReconnect: (closeEvent) => {console.log(closeEvent); return true},
+  };
   const [ columnWidth ] = useState(4);
   const [ deadBosses, deadBoss ] = useState([]);
-  const [ bosses, updateBosses ] = useState(bossData);  
-  const [ bossCommentsWS, openCommentWS ] = useState(initialBCWS);
-  const [ bossPostWS, openPostWS ] = useState(initialBPWS);
+  const [ bosses, updateBosses ] = useState(bossData);
+  const { lastJsonMessage: incomingComment } = useWebSocket('wss://api.spaghet.io/ws/kotd/boss-comments', wsOptions);
+  const { lastJsonMessage: newBoss } = useWebSocket('wss://api.spaghet.io/ws/kotd/boss-posts', wsOptions);
   const [ newPlayerComment, sendPlayerComment ] = useState(false);
   const [ newBossComment, sendBossComment ] = useState(false);
   const [ totalMaxDmg, updateMaxDmg ] = useState(0)
   const [ storedPlayerName ] = useState(localStorage.getItem('storedPlayerName') || '');
 
-  bossCommentsWS.onopen = function(event) {
-    bossCommentsWS.send(`Ping`);
-    setInterval(() => {
-      bossCommentsWS.send(`Ping`);
-    }, 30000);
-  };
-
-  bossPostWS.onopen = function(event) {
-    bossPostWS.send(`Ping`);
-    setInterval(() => {
-      bossPostWS.send(`Ping`);
-    }, 30000);
-  };
-  
-  bossCommentsWS.onmessage = function(event) {
-    const comment = JSON.parse(event.data).payload;
-    switch(comment.author) {
-      case 'KickOpenTheDoorBot':
-        sendBossComment(comment);
-        break;
-      default:
-        sendPlayerComment(comment);
-        break;
+  useEffect(() => {
+    if(incomingComment) {
+      switch(incomingComment.author) {
+        case 'KickOpenTheDoorBot':
+          sendBossComment(incomingComment);
+          break;
+        default:
+          sendPlayerComment(incomingComment);
+          break;
+      }
     }
-  };
-  
-  bossPostWS.onmessage = (event) => {
-    const newBoss = JSON.parse(event.data);
-    updateBosses([
-      ...bosses,
-      newBoss
-    ]);
-  };
+  }, [incomingComment]);
 
-  bossCommentsWS.onclose = function(event) {
-    openCommentWS(new WebSocket('wss://api.spaghet.io/ws/kotd/boss-comments'));
-  };
-
-  bossPostWS.onclose = (event) => {
-    openPostWS(new WebSocket('wss://api.spaghet.io/ws/kotd/boss-posts'));
-  };
+  useEffect(() => {
+    if(newBoss) {
+      updateBosses([
+        ...bosses,
+        newBoss
+      ]);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [newBoss]);
 
   const bossUpdate = (targetBoss, type) => {
     switch(type) {

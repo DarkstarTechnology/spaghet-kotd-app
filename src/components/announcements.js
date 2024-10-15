@@ -1,40 +1,39 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Snackbar, Alert, AlertTitle } from "@mui/material";
-import { setInterval  } from "worker-timers";
-
-const initialAnnouncementWS = new WebSocket('wss://api.spaghet.io/ws/kotd/announcements');
+import useWebSocket from 'react-use-websocket';
 
 const Announcements = ({text, title, variant}) => {
+  const [storedPlayerName] = useState(localStorage.getItem('storedPlayerName'));
   const [open, setOpen] = useState(false);
   const [announcement, setAnnouncement] = useState({message: '', severity: '', for: ''});
-  const [announcementWS, openCommentWS] = useState(initialAnnouncementWS);
-  const [storedPlayerName] = useState(localStorage.getItem('storedPlayerName'));
 
-  announcementWS.onopen = function(event) {
-    announcementWS.send(JSON.stringify({storedPlayerName, version: process.env.REACT_APP_VERSION}));
-    setInterval(() => {
-      announcementWS.send(JSON.stringify({storedPlayerName, version: process.env.REACT_APP_VERSION}));
-    }, 30000);
+  const wsOptions = {
+    reconnectInterval: 3000,
+    heartbeat: {
+      message: JSON.stringify({storedPlayerName, version: process.env.REACT_APP_VERSION}),
+      returnMessage: 'pong',
+      timeout: 60000,
+      interval: 25000,
+    },
+    retryOnError: true
   };
+  const { lastJsonMessage: incomingAnnouncement } = useWebSocket('wss://api.spaghet.io/ws/kotd/announcements', wsOptions);
   
-  announcementWS.onmessage = function(event) {
-    const announcement = JSON.parse(event.data);
-    if(announcement.message === 'forceReload') {
-      window.location.reload(true);
-      return;
-    }
-    if(announcement.for === 'All' || announcement.for.toLowerCase() === storedPlayerName.toLowerCase()) {
-      setAnnouncement(announcement);
-      setOpen(true);
-    }
-    if(announcement.for.toLowerCase() === storedPlayerName.toLowerCase()) {
-      announcementWS.send(`Announcement Received for: ${storedPlayerName}`);
-    }
-  };
 
-  announcementWS.onclose = function(event) {
-    openCommentWS(new WebSocket('wss://api.spaghet.io/ws/kotd/announcements'));
-  };
+  useEffect(() => {
+    if(incomingAnnouncement) {
+      const announcement = incomingAnnouncement;
+      if(announcement.message === 'forceReload') {
+        window.location.reload(true);
+        return;
+      }
+      if(announcement.for === 'All' || announcement.for.toLowerCase() === storedPlayerName.toLowerCase()) {
+        setAnnouncement(announcement);
+        setOpen(true);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [incomingAnnouncement])
 
   return (
     <>

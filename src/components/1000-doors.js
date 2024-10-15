@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+import useSWR from 'swr';
 import { useState, useRef, useEffect, Fragment } from 'react';
 import { styled, Card, CardHeader, CardMedia, CardContent, CardActions, Collapse, 
     IconButton, Typography, TextField, 
@@ -13,14 +15,18 @@ import moment from 'moment';
 
 moment.relativeTimeThreshold('m', 60);
 
+const fetcher = (...args) => fetch(...args).then((res) => res.json());
+
 const ThousandDoors = () => {
 
     const [ activeDoor, setDoor ] = useState('');
-    const [ doors, updateDoors] = useState(Array.from({length: 1000}).map((d, id) => ({id: id+1, open: false, label: `Door ${id + 1}`})));
+    const [ doors, updateDoors] = useState([]);
     const [ myOpenDoors, claimDoor ] = useState([]);
-    const [ boots, setBoots ] = useState([{ id: 12345, used: false, door: null }])
+    const [ boots, setBoots ] = useState([]);
+    const [ storedPlayerName ] = useState(localStorage.getItem('storedPlayerName') || '');
     const [ phase, setPhase ] = useState(0);
     const [ open, openDoor ] = useState(false);
+    const [ kicking, kickingDoor ] = useState(false);
 
     const doorImage = {
         backgroundImage: 'url(/assets/misc/dungeon_doors.png)',
@@ -100,7 +106,7 @@ const ThousandDoors = () => {
         const closedDoors = doors.filter(door => !door.open);
         const randomDoor = Math.floor(Math.random() * (doors.length - 1));
         setDoor(closedDoors.at(randomDoor));
-    }
+    };
 
     const phaseDoor = () => {
         setPhase(phase === doorPhases.length - 1 ? 0 : phase + 1);
@@ -126,24 +132,46 @@ const ThousandDoors = () => {
   
     useEffect(() => {
         if(open) {
-            setPhase(1);
-            setBoots(boots.slice(1));
-            claimDoor([
-                ...myOpenDoors,
-                {
-                    ...activeDoor,
-                    opened: new Date()
+            kickingDoor(true);
+            fetcher(`https://api.spaghet.io/kotd/v1/event/1000Doors/kickDoor`, {method: 'POST', body: JSON.stringify({player: storedPlayerName, door: activeDoor.id})}).then((door) => {
+                const {doorKicked, loot} = door;
+                if(doorKicked) {
+                    kickingDoor(false);
+                    setPhase(1);
+                    setBoots(boots.slice(1));
+                    setDoor({
+                        ...activeDoor,
+                        loot
+                    });
+                    claimDoor([
+                        ...myOpenDoors,
+                        door
+                    ]);
+                } else {
+                    console.log(door)
                 }
-            ])
+              });
         } else {
             setPhase(0);
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
 
+    const distributeData = ({playerDoors, playerBoots, availableDoors}) => {
+        claimDoor(playerDoors);
+        setBoots(playerBoots);
+        updateDoors(availableDoors);
+    }
+
+    
+  const {
+    error,
+    isValidating,
+  } = useSWR(`https://api.spaghet.io/kotd/v1/event/1000Doors/${storedPlayerName}`, fetcher, { onSuccess: distributeData, revalidateOnFocus: false});
+
     return (
-        <Grid container spacing={1} alignItems="top" justifyContent="center" style={{marginTop: '60px', color: '#FFF'}}>
-            <Grid item lg={4} xl={4}>
+        <Grid container spacing={1} alignItems="top" justifyContent="center" style={{color: '#FFF'}}>
+            <Grid item lg={4} xl={4} md={12} sm={12} xs={12}>
                 <Box variant="div" sx={{p: 6}}>
                     <Box variant="h4">Event Details</Box>
                     <Divider orientation="horizontal" flexItem sx={{backgroundColor: '#FFF', marginBottom: 3}} />
@@ -158,16 +186,16 @@ const ThousandDoors = () => {
                     </Box>
                 </Box>
             </Grid>
-            <Grid item lg={4} xl={4} alignItems="top" sx={{justifyContent: 'center'}}>
+            <Grid item lg={4} xl={4} md={6} sm={12} xs={12} alignItems="top" sx={{justifyContent: 'center'}}>
                 <div style={{...doorImage, ...doorPhases[phase], position: 'relative'}}>
                     <span style={{position: 'absolute', top: '1%', left: '50%', transform: 'translate(-50%, 1%)', color: '#000', fontWeight: 'bolder', fontSize: '1.5rem'}}>{activeDoor?.id ?? ''}</span>
                     {phase === doorPhases.length - 1 ? <div style={{position: 'absolute', top: 'calc(50% + 30px)', left: '50%', transform: 'translate(-50%, -50%)'}}>
-                        LOOT
-                    </div> : <IconButton disabled={!activeDoor || (!boots.length && !phase)} sx={{position: 'absolute', top: 'calc(50% + 30px)', left: '50%', transform: 'translate(-50%, -50%)', fontSize: doorPhases?.at(phase)?.fontSize, color: 'gold', cursor: !activeDoor.open && boots.length ? 'url(/assets/misc/boot_cur.png) 50 50, pointer' : 'not-allowed' }} onClick={() => openDoor(!open)}>{doorPhases?.at(phase)?.icon}</IconButton>}
+                        {activeDoor.loot}
+                    </div> : <IconButton disabled={!activeDoor || (!boots.length && !phase)} sx={{position: 'absolute', top: 'calc(50% + 30px)', left: '50%', transform: 'translate(-50%, -50%)', fontSize: doorPhases?.at(phase)?.fontSize, color: 'gold', cursor: activeDoor && boots.length ? 'url(/assets/misc/boot_cur.png) 50 50, pointer' : 'not-allowed' }} onClick={() => openDoor(!open)}>{doorPhases?.at(phase)?.icon}</IconButton>}
                 </div><br />
                 <Autocomplete
                     value={activeDoor}
-                    disabled={!boots.length}
+                    disabled={!boots.length || kicking}
                     isOptionEqualToValue={(data) => true}
                     getOptionDisabled={(door) => door.open}
                     onChange={(event, newValue) => {
@@ -183,25 +211,25 @@ const ThousandDoors = () => {
                     renderInput={(params) => 
                         <TextField 
                             {...params} 
-                            label="Doors"
+                            label={boots.length ? 'Select Door' : 'No Boots ):'}
                             disabled={!boots.length}
                             InputProps={{
                                 ...params.InputProps,
                                 endAdornment: (
                                 <InputAdornment position='end'>
-                                    <IconButton disabled={!boots.length} sx={{color: '#FFF', position: 'absolute'}} onClick={randomDoor}><ShuffleIcon /></IconButton>
+                                    <IconButton title={'Random Door'} disabled={!boots.length} sx={{color: '#FFF', position: 'absolute'}} onClick={randomDoor}><ShuffleIcon /></IconButton>
                                 </InputAdornment>
                                 ),
                             }}
                         />
                     }
                 />
-                <Box variant='h5' sx={{fontSize: '2rem', color: 'brown', margin: 0,display: 'flex', alignItems: 'top', flexWrap: 'wrap', justifyContent: 'center'}}><img alt="Boot" src={'/assets/misc/boot.png'} style={{width: '40px', marginRight: '10px'}} /> x{boots.length}</Box>
-                Remaining Doors: {doors.filter(door => !door.open).length} {open}
+                <Box variant='h5' sx={{fontSize: '2rem', color: 'brown', marginTop: 2,display: 'flex', alignItems: 'top', flexWrap: 'wrap', justifyContent: 'center'}}><img alt="Boot" src={'/assets/misc/boot.png'} style={{width: '40px', marginRight: '10px'}} /> x{boots.length}</Box>
+                {/* Remaining Doors: {doors.filter(door => !door.open).length} {open} */}
             </Grid>
-            <Grid item lg={4} xl={4} alignItems="top" sx={{justifyContent: 'center'}}>
+            <Grid item lg={4} xl={4} md={6} sm={12} xs={12} alignItems="top" sx={{justifyContent: 'center'}}>
                 <Box variant="div" sx={{p: 6}}>
-                    <Box variant="h4">My Open Doors</Box>
+                    <Box variant="h4">My Kicked Doors</Box>
                     <Divider orientation="horizontal" flexItem sx={{backgroundColor: '#FFF', marginBottom: 3}} />
                     {myOpenDoors.map(door => 
                         <Accordion key={door.id} sx={{bgcolor: 'secondary.main'}}>
@@ -211,7 +239,7 @@ const ThousandDoors = () => {
                                         <Box variant="h4">Door: {door.id}</Box>
                                     </Grid>
                                     <Grid item xs={6}>
-                                        <Moment fromNow>{door.opened}</Moment>
+                                        <Moment fromNow>{door.kicked}</Moment>
                                     </Grid>
                                 </Grid>
                             </AccordionSummary>
@@ -220,6 +248,7 @@ const ThousandDoors = () => {
                             </AccordionDetails>
                         </Accordion>
                     )}
+                    {!myOpenDoors.length ? <h4>Your kicked doors will appear here</h4> : ''}
                 </Box>
             </Grid>
         </Grid>

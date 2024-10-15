@@ -8,7 +8,9 @@ const CopyToClipboardButton = ({text, title, variant}) => {
 
   const handleClick = () => {
     setOpen(true);
-    navigator.clipboard.writeText(text);
+    if(text) {
+      navigator.clipboard.writeText(text);
+    }
   };
 
   return (
