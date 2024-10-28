@@ -10,6 +10,7 @@ import { TotalMaxDmg } from './total-max-dmg';
 import { Announcements } from './announcements';
 import { DeadBosses } from './dead-bosses';
 import { ThousandDoors } from './1000-doors'
+import { ThousandDoorsReport } from './1000-doors-report'
 
 export { BossList, 
          PlayerDetails, 
@@ -22,5 +23,6 @@ export { BossList,
          TotalMaxDmg, 
          Announcements, 
          DeadBosses,
-         ThousandDoors
+         ThousandDoors,
+         ThousandDoorsReport
 };

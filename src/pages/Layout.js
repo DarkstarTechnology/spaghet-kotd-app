@@ -46,11 +46,10 @@ const Layout = (props) => {
     {title: 'Inventory', to: '/inventory', icon: <BackpackIcon style={{verticalAlign:'middle'}}  />, loginRequired: true}, 
     {title: 'Raid Math', to: '/raid', icon: <CalculateIcon style={{verticalAlign:'middle'}}  />, loginRequired: true}
   ];
-
-  const eventUsers = [
-    "SpaghetGaming",
-    "DejaV42",
-    "numerousiceballs"
+  const thousandDoorReporters = [
+    'SpaghetOG',
+    'DejaV42',
+    'numerousiceballs'
   ];
     
   const { window } = props;
@@ -85,14 +84,17 @@ const Layout = (props) => {
             </ListItemButton>
           </ListItem>
         ))}
-        {eventUsers.includes(storedPlayerName) ? <>
-          <ListSubheader sx={{fontWeight: 'bolder', bgcolor: 'primary.main', color: '#FFF'}}  divider={<Divider />}>Events</ListSubheader>
-          <ListItem disablePadding>
-            <ListItemButton component={ReactRouterLink} sx={{ textAlign: 'center' }} to={'/1000doors'} divider={true}>
-              <DoorFrontTwoToneIcon sx={{verticalAlign:'middle'}} />&nbsp;1000 Doors
-            </ListItemButton>
-          </ListItem>
-        </> : ''}
+        <ListSubheader sx={{fontWeight: 'bolder', bgcolor: 'primary.main', color: '#FFF'}}  divider={<Divider />}>Events</ListSubheader>
+        <ListItem disablePadding>
+          <ListItemButton component={ReactRouterLink} sx={{ textAlign: 'center' }} to={'/1000doors'} divider={true}>
+            <DoorFrontTwoToneIcon sx={{verticalAlign:'middle'}} />&nbsp;1000 Doors
+          </ListItemButton>
+        </ListItem>
+        {storedPlayerName && thousandDoorReporters.includes(storedPlayerName) ?<ListItem disablePadding>
+          <ListItemButton component={ReactRouterLink} sx={{ textAlign: 'center' }} to={'/1000doors/report'} divider={true}>
+            <DoorFrontTwoToneIcon sx={{verticalAlign:'middle'}} />&nbsp;1000 Doors Report
+          </ListItemButton>
+        </ListItem> : ''}
       </List>
     </Box>
   );
@@ -128,8 +130,7 @@ const Layout = (props) => {
                 </Link>
               ))}
             </Box>
-            {eventUsers.includes(storedPlayerName) ? <>
-              <Button
+            <Button
               id="basic-button"
               aria-controls={open ? 'basic-menu' : undefined}
               aria-haspopup="true"
@@ -139,23 +140,27 @@ const Layout = (props) => {
               sx={{color: '#FFF', display: {  xs: 'none', sm: 'none', md: 'none', lg: 'block' }}}
               >
                 <CelebrationIcon  sx={{verticalAlign:'middle'}} />&nbsp;Events
-              </Button>
-              <Menu
-                id="basic-menu"
-                anchorEl={anchorEl}
-                open={open}
-                onClose={eventMenuClose}
-                MenuListProps={{
-                  'aria-labelledby': 'basic-button',
-                }}
-              >
-                <MenuItem onClick={eventMenuClose} >
-                  <Link component={ReactRouterLink} to={'/1000doors'} sx={{verticalAlign:'middle'}}>
-                    <DoorFrontTwoToneIcon sx={{verticalAlign:'middle'}} />&nbsp;1000 Doors
-                  </Link>
-                </MenuItem>
-              </Menu>
-            </> : ''}
+            </Button>
+            <Menu
+              id="basic-menu"
+              anchorEl={anchorEl}
+              open={open}
+              onClose={eventMenuClose}
+              MenuListProps={{
+                'aria-labelledby': 'basic-button',
+              }}
+            >
+              <MenuItem onClick={eventMenuClose} >
+                <Link component={ReactRouterLink} to={'/1000doors'} sx={{verticalAlign:'middle'}}>
+                  <DoorFrontTwoToneIcon sx={{verticalAlign:'middle'}} />&nbsp;1000 Doors
+                </Link>
+              </MenuItem>
+              {storedPlayerName && thousandDoorReporters.includes(storedPlayerName) ? <MenuItem onClick={eventMenuClose} >
+                <Link component={ReactRouterLink} to={'/1000doors/report'} sx={{verticalAlign:'middle'}}>
+                  <DoorFrontTwoToneIcon sx={{verticalAlign:'middle'}} />&nbsp;1000 Doors Report
+                </Link>
+              </MenuItem> : ''}
+            </Menu>
             <Box sx={{ margin: 'auto'}}>
               <PlayerDetails />
             </Box>

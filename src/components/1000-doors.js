@@ -27,6 +27,7 @@ const ThousandDoors = () => {
     const [ phase, setPhase ] = useState(0);
     const [ open, openDoor ] = useState(false);
     const [ kicking, kickingDoor ] = useState(false);
+    const [ doorError, newError ] = useState({show: false, message: ''});
 
     const doorImage = {
         backgroundImage: 'url(/assets/misc/dungeon_doors.png)',
@@ -134,9 +135,9 @@ const ThousandDoors = () => {
         if(open) {
             kickingDoor(true);
             fetcher(`https://api.spaghet.io/kotd/v1/event/1000Doors/kickDoor`, {method: 'POST', body: JSON.stringify({player: storedPlayerName, door: activeDoor.id})}).then((door) => {
-                const {doorKicked, loot} = door;
+                const {doorKicked, loot, message = ''} = door;
+                kickingDoor(false);
                 if(doorKicked) {
-                    kickingDoor(false);
                     setPhase(1);
                     setBoots(boots.slice(1));
                     setDoor({
@@ -148,7 +149,10 @@ const ThousandDoors = () => {
                         door
                     ]);
                 } else {
-                    console.log(door)
+                    newError({
+                        show: true,
+                        message
+                    });
                 }
               });
         } else {
@@ -168,6 +172,8 @@ const ThousandDoors = () => {
     error,
     isValidating,
   } = useSWR(`https://api.spaghet.io/kotd/v1/event/1000Doors/${storedPlayerName}`, fetcher, { onSuccess: distributeData, revalidateOnFocus: false});
+
+  if(!storedPlayerName) return <h3 style={{color: '#FFFFFF'}}>Enter a username to see this event!!</h3>
 
     return (
         <Grid container spacing={1} alignItems="top" justifyContent="center" style={{color: '#FFF'}}>
@@ -191,8 +197,20 @@ const ThousandDoors = () => {
                     <span style={{position: 'absolute', top: '1%', left: '50%', transform: 'translate(-50%, 1%)', color: '#000', fontWeight: 'bolder', fontSize: '1.5rem'}}>{activeDoor?.id ?? ''}</span>
                     {phase === doorPhases.length - 1 ? <div style={{position: 'absolute', top: 'calc(50% + 30px)', left: '50%', transform: 'translate(-50%, -50%)'}}>
                         {activeDoor.loot}
-                    </div> : <IconButton disabled={!activeDoor || (!boots.length && !phase)} sx={{position: 'absolute', top: 'calc(50% + 30px)', left: '50%', transform: 'translate(-50%, -50%)', fontSize: doorPhases?.at(phase)?.fontSize, color: 'gold', cursor: activeDoor && boots.length ? 'url(/assets/misc/boot_cur.png) 50 50, pointer' : 'not-allowed' }} onClick={() => openDoor(!open)}>{doorPhases?.at(phase)?.icon}</IconButton>}
-                </div><br />
+                    </div> : <IconButton disabled={kicking || !activeDoor || (!boots.length && !phase)} sx={{position: 'absolute', top: 'calc(50% + 30px)', left: '50%', transform: 'translate(-50%, -50%)', fontSize: doorPhases?.at(phase)?.fontSize, color: 'gold', cursor: activeDoor && boots.length ? 'url(/assets/misc/boot_cur.png) 50 50, pointer' : 'not-allowed' }} onClick={() => openDoor(!open)}>{doorPhases?.at(phase)?.icon}</IconButton>}
+                </div>
+                {doorError.show ? <Alert
+                        onClose={() => newError({...doorError, show: false})}
+                        severity={'error'}
+                        variant={'filled'}
+                        sx={{
+                            margin: '10px auto',
+                            maxWidth: '300px'
+                        }}
+                    >
+                        <AlertTitle sx={{fontWeight: 'bolder'}}>Door NOT Kicked!!</AlertTitle>
+                        {doorError.message}
+                    </Alert> : <br />}
                 <Autocomplete
                     value={activeDoor}
                     disabled={!boots.length || kicking}
@@ -231,7 +249,7 @@ const ThousandDoors = () => {
                 <Box variant="div" sx={{p: 6}}>
                     <Box variant="h4">My Kicked Doors</Box>
                     <Divider orientation="horizontal" flexItem sx={{backgroundColor: '#FFF', marginBottom: 3}} />
-                    {myOpenDoors.map(door => 
+                    {myOpenDoors?.map(door => 
                         <Accordion key={door.id} sx={{bgcolor: 'secondary.main'}}>
                             <AccordionSummary>
                                 <Grid container spacing={1}>
@@ -244,11 +262,16 @@ const ThousandDoors = () => {
                                 </Grid>
                             </AccordionSummary>
                             <AccordionDetails>
-                                {door.loot}
+                                <div style={{...doorImage, ...doorPhases[3], position: 'relative'}}>
+                                    <span style={{position: 'absolute', top: '1%', left: '50%', transform: 'translate(-50%, 1%)', color: '#000', fontWeight: 'bolder', fontSize: '1.5rem'}}>{door?.id ?? ''}</span>
+                                    <div style={{color: '#FFF', position: 'absolute', top: 'calc(50% + 30px)', left: '50%', transform: 'translate(-50%, -50%)'}}>
+                                        {door.loot}
+                                    </div>
+                                </div>
                             </AccordionDetails>
                         </Accordion>
                     )}
-                    {!myOpenDoors.length ? <h4>Your kicked doors will appear here</h4> : ''}
+                    {!myOpenDoors?.length ? <h4>Your kicked doors will appear here</h4> : ''}
                 </Box>
             </Grid>
         </Grid>
