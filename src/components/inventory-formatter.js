@@ -30,29 +30,29 @@ const InventoryFormmater = ({ playerInventory }) => {
       },
       element: {
         Air: false,
-        Bles: false,
-        Curs: false,
-        Erth: false,
+        Blessed: false,
+        Cursed: false,
+        Earth: false,
         Fire: false,
         Moon: false,
-        Org: false,
+        Organic: false,
         Sun: false,
-        Syn: false,
-        Wtr: false,
+        Synthetic: false,
+        Water: false,
       }
     });
 
     const optionLabels = {
       Air: 'https://cdn.discordapp.com/emojis/1051333997323628564.webp?size=48&quality=lossless',
-      Bles: 'https://cdn.discordapp.com/emojis/1042933454708408350.webp?size=48&quality=lossless',
-      Curs: 'https://cdn.discordapp.com/emojis/1042933519703343304.webp?size=48&quality=lossless',
-      Erth: 'https://cdn.discordapp.com/emojis/1051333985499885648.webp?size=48&quality=lossless',
+      Blessed: 'https://cdn.discordapp.com/emojis/1042933454708408350.webp?size=48&quality=lossless',
+      Cursed: 'https://cdn.discordapp.com/emojis/1042933519703343304.webp?size=48&quality=lossless',
+      Earth: 'https://cdn.discordapp.com/emojis/1051333985499885648.webp?size=48&quality=lossless',
       Fire: 'https://cdn.discordapp.com/emojis/1042933464594391151.webp?size=48&quality=lossless',
       Moon: 'https://cdn.discordapp.com/emojis/1042933456579072040.webp?size=48&quality=lossless',
-      Org: 'https://cdn.discordapp.com/emojis/1042933517727825980.webp?size=48&quality=lossless',
+      Organic: 'https://cdn.discordapp.com/emojis/1042933517727825980.webp?size=48&quality=lossless',
       Sun: 'https://cdn.discordapp.com/emojis/1042933458357461042.webp?size=48&quality=lossless',
-      Syn: 'https://cdn.discordapp.com/emojis/1042933460475592765.webp?size=48&quality=lossless',
-      Wtr: 'https://cdn.discordapp.com/emojis/1042933352770064394.webp?size=48&quality=lossless',
+      Synthetic: 'https://cdn.discordapp.com/emojis/1042933460475592765.webp?size=48&quality=lossless',
+      Water: 'https://cdn.discordapp.com/emojis/1042933352770064394.webp?size=48&quality=lossless',
     };
 
     // const handleSortChange = (event) => {
